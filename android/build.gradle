@@ -1,0 +1,32 @@
+// Repositórios para dependências
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+// Configuração de diretórios de build
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+// Tarefa para limpar o build
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
+
+// Adicione o Google Services para habilitar Firebase
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.google.gms:google-services:4.3.15' // Certifique-se de usar a versão mais recente
+    }
+}

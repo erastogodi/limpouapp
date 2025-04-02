@@ -1,0 +1,44 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // O plugin do Flutter deve ser aplicado após os plugins do Android e Kotlin.
+    id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services" // Plugin do Google Services para Firebase
+}
+
+android {
+    namespace = "com.example.limpou25k"
+    compileSdk = 34 // Certifique-se de usar uma versão atualizada do compileSdk
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        applicationId = "com.example.limpou25k" // ID do aplicativo (nome do pacote)
+        minSdk = 23 // Atualizado para atender aos requisitos do Firebase
+        targetSdk = 34 // Certifique-se de usar uma versão compatível
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        release {
+            // Adicione sua configuração de assinatura para o build de release no futuro.
+            // Por enquanto, está usando a configuração de debug para permitir `flutter run --release`.
+            signingConfig = signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}

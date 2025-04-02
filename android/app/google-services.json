@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "852042881786",
+    "project_id": "limpou25k",
+    "storage_bucket": "limpou25k.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:852042881786:android:107423bd19b8134c56c743",
+        "android_client_info": {
+          "package_name": "com.example.limpou25k"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1oXCCyn2s04b4EUmbqbdCcPfL96hraNY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,106 @@
+import 'package:flutter/material.dart';
+import 'package:limpou25k/views/add_property_view.dart';
+import 'package:limpou25k/views/chat_list_view.dart';
+import 'package:limpou25k/views/chat_view.dart';
+import 'package:limpou25k/views/choose_user_type_view.dart';
+import 'package:limpou25k/views/create_property_view.dart';
+import 'package:limpou25k/views/home_contratante_view.dart';
+import 'package:limpou25k/views/home_view.dart';
+import 'package:limpou25k/views/login_view.dart';
+import 'package:limpou25k/views/notifications_view.dart';
+import 'package:limpou25k/views/perfil_domestica_view.dart';
+import 'package:limpou25k/views/register_view.dart';
+import 'package:limpou25k/views/service_detail_view.dart';
+
+class AppRoutes {
+  static const String login = '/';
+  static const String register = '/register';
+  static const String homeDomestica = '/home_domestica';
+  static const String homeContratante = '/home_contratante';
+  static const String chooseUserType = '/choose_user_type';
+  static const String chatList = '/chat_list';
+  static const String chatView = '/chat_view';
+  static const String addProperty = '/add_property';
+  static const String createProperty = '/create_property';
+  static const String notifications = '/notifications';
+  static const String perfilDomestica = '/perfil_domestica';
+  static const String serviceDetail = '/service_detail';
+  static const String userProfile = '/user_profile';
+
+  static final Map<String, WidgetBuilder> routes = {
+    login: (context) => const LoginView(),
+    register: (context) => const RegisterView(),
+    homeDomestica: (context) => const HomePage(),
+    homeContratante: (context) => const HomeContratanteView(),
+    chooseUserType: (context) => const ChooseUserTypeView(),
+    chatList: (context) => const ChatListView(),
+    addProperty: (context) => const AddPropertyView(),
+    createProperty: (context) => const CreatePropertyView(),
+    notifications: (context) => const NotificationsView(),
+    serviceDetail: (context) {
+      final args =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+      return ServiceDetailsView(
+        property: args,
+        serviceId: args['id'] ?? '',
+      );
+    },
+  };
+
+  static Route<dynamic>? generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case chatView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        if (args != null) {
+          return MaterialPageRoute(
+            builder: (_) => ChatView(
+              receiverId: args['receiverId'],
+              receiverName: args['receiverName'],
+              receiverImage: args['receiverImage'],
+            ),
+          );
+        } else {
+          return _errorPage('Erro: Nenhuma conversa encontrada.');
+        }
+
+      case perfilDomestica:
+        final userId = settings.arguments as String?;
+        if (userId != null) {
+          return MaterialPageRoute(
+            builder: (_) => PerfilDomesticaView(userId: userId),
+          );
+        } else {
+          return _errorPage('Erro: Nenhum usuário encontrado.');
+        }
+
+      case serviceDetail:
+        final args = settings.arguments as Map<String, dynamic>?;
+        if (args != null) {
+          return MaterialPageRoute(
+            builder: (_) => ServiceDetailsView(
+              property: args.cast<String, String>(),
+              serviceId: args['id'] ?? '',
+            ),
+          );
+        } else {
+          return _errorPage('Erro: Nenhum serviço encontrado.');
+        }
+
+      default:
+        return _errorPage('Rota não encontrada!');
+    }
+  }
+
+  static MaterialPageRoute _errorPage(String message) {
+    return MaterialPageRoute(
+      builder: (_) => Scaffold(
+        body: Center(
+          child: Text(
+            message,
+            style: const TextStyle(fontSize: 20, color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  }
+}
