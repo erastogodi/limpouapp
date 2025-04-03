@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class MessageModel {
-  String senderId;
-  String receiverId;
-  String message;
-  DateTime timestamp;
+  final String senderId;
+  final String receiverId;
+  final String message;
+  final DateTime timestamp;
 
   MessageModel({
     required this.senderId,
@@ -16,16 +18,16 @@ class MessageModel {
       'senderId': senderId,
       'receiverId': receiverId,
       'message': message,
-      'timestamp': timestamp.toIso8601String(),
+      'timestamp': Timestamp.fromDate(timestamp),
     };
   }
 
   static MessageModel fromMap(Map<String, dynamic> map) {
     return MessageModel(
-      senderId: map['senderId'],
-      receiverId: map['receiverId'],
-      message: map['message'],
-      timestamp: DateTime.parse(map['timestamp']),
+      senderId: map['senderId'] ?? '',
+      receiverId: map['receiverId'] ?? '',
+      message: map['message'] ?? '',
+      timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 }

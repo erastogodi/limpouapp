@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -36,10 +35,10 @@ class _ChatViewState extends State<ChatView> {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundImage: widget.receiverImage.isNotEmpty
+              backgroundImage: (widget.receiverImage.isNotEmpty &&
+                      widget.receiverImage.startsWith('http'))
                   ? NetworkImage(widget.receiverImage)
-                  : const AssetImage('assets/images/user_placeholder.png')
-                      as ImageProvider,
+                  : const AssetImage('assets/images/user_placeholder.png'),
               radius: 20,
             ),
             const SizedBox(width: 10),
@@ -72,10 +71,8 @@ class _ChatViewState extends State<ChatView> {
                   itemCount: snapshot.data!.length,
                   itemBuilder: (context, index) {
                     final message = snapshot.data![index];
-
                     final isMe = message.senderId == currentUserId;
-                    final timeString =
-                        _formatTimestamp(message.timestamp as Timestamp?);
+                    final timeString = _formatTimestamp(message.timestamp);
 
                     return Align(
                       alignment:
@@ -167,8 +164,13 @@ class _ChatViewState extends State<ChatView> {
     );
   }
 
-  String _formatTimestamp(Timestamp? timestamp) {
+  String _formatTimestamp(DateTime? timestamp) {
     if (timestamp == null) return '...';
-    return "${timestamp.toDate().hour}:${timestamp.toDate().minute}";
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min';
+    if (diff.inHours < 24) return '${diff.inHours} h';
+    return '${diff.inDays} d';
   }
 }

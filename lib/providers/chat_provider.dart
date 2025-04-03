@@ -7,7 +7,6 @@ class ChatProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // 🔹 Obtém o ID do chat entre dois usuários
   String getChatId(String receiverId) {
     final userId = _auth.currentUser!.uid;
     List<String> ids = [userId, receiverId];
@@ -15,12 +14,10 @@ class ChatProvider extends ChangeNotifier {
     return ids.join('_');
   }
 
-  // 🔹 Envia mensagem para o Firestore
   Future<void> sendMessage(
       String senderId, String receiverId, String message) async {
     if (message.trim().isEmpty) return;
 
-    final currentUser = _auth.currentUser!;
     final chatId = getChatId(receiverId);
 
     final messageData = {
@@ -30,38 +27,28 @@ class ChatProvider extends ChangeNotifier {
       'timestamp': FieldValue.serverTimestamp(),
     };
 
-    // ✅ Adiciona a mensagem à coleção de mensagens do chat
     await _firestore
-        .collection('chats')
-        .doc(chatId)
         .collection('messages')
+        .doc(chatId)
+        .collection('items')
         .add(messageData);
 
-    // ✅ Atualiza a última mensagem no documento principal do chat
     await _firestore.collection('chats').doc(chatId).set({
       'participants': [senderId, receiverId],
       'lastMessage': message,
       'lastMessageTime': FieldValue.serverTimestamp(),
-
-      // 🔹 Armazena corretamente os dados dos usuários
-      'user1Id': senderId,
-      'user1Name': currentUser.displayName ?? 'Usuário',
-      'user1Image': currentUser.photoURL ?? '',
-
-      'user2Id': receiverId,
     }, SetOptions(merge: true));
 
     notifyListeners();
   }
 
-  // 🔹 Obtém as mensagens do chat em tempo real
   Stream<List<MessageModel>> getMessages(String senderId, String receiverId) {
     final chatId = getChatId(receiverId);
     return _firestore
-        .collection('chats')
-        .doc(chatId)
         .collection('messages')
-        .orderBy('timestamp', descending: false)
+        .doc(chatId)
+        .collection('items')
+        .orderBy('timestamp')
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -70,27 +57,36 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
-  // 🔹 Obtém as conversas do usuário logado
-  Stream<List<Map<String, dynamic>>> getUserChats() {
+  Stream<List<Map<String, dynamic>>> getUserChats() async* {
     final userId = _auth.currentUser!.uid;
-    return _firestore
+
+    await for (final snapshot in _firestore
         .collection('chats')
         .where('participants', arrayContains: userId)
         .orderBy('lastMessageTime', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data();
-        return {
+        .snapshots()) {
+      final List<Map<String, dynamic>> chats = [];
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final participants = List<String>.from(data['participants'] ?? []);
+        final otherId = participants.firstWhere((id) => id != userId);
+
+        // 🔍 Busca nome e imagem do outro usuário
+        final userDoc = await _firestore.collection('users').doc(otherId).get();
+        final userData = userDoc.data();
+
+        chats.add({
           'chatId': doc.id,
-          'user1Id': data['user1Id'],
-          'user1Name': data['user1Name'],
-          'user1Image': data['user1Image'],
-          'user2Id': data['user2Id'],
+          'receiverId': otherId,
+          'receiverName': userData?['name']?.toString().trim() ?? 'Usuário',
+          'receiverImage': userData?['profilePicture'] ?? '',
           'lastMessage': data['lastMessage'] ?? '',
-          'lastMessageTime': data['lastMessageTime'] as Timestamp?,
-        };
-      }).toList();
-    });
+          'lastMessageTime': data['lastMessageTime'],
+        });
+      }
+
+      yield chats;
+    }
   }
 }

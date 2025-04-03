@@ -24,6 +24,12 @@ class ChatListView extends StatelessWidget {
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: chatProvider.getUserChats(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            debugPrint('🔥 ERRO DETALHADO: ${snapshot.error}');
+            debugPrintStack(label: '⛔ Stack trace erro StreamBuilder');
+            return const Center(child: Text("Erro ao carregar conversas."));
+          }
+
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -52,10 +58,9 @@ class ChatListView extends StatelessWidget {
   }
 
   Widget _buildChatItem(BuildContext context, Map<String, dynamic> chatData) {
-    final String userId = chatData['user1Id'];
-    final String contactName = chatData['user1Name'] ?? 'Usuário';
-    final String contactImage =
-        chatData['user1Image'] ?? 'assets/images/user_placeholder.png';
+    final String userId = chatData['receiverId'] ?? '';
+    final String contactName = chatData['receiverName'] ?? 'Usuário';
+    final String contactImage = chatData['receiverImage'] ?? '';
     final String lastMessage = chatData['lastMessage'] ?? 'Nenhuma mensagem';
     final Timestamp? lastMessageTime = chatData['lastMessageTime'];
 
@@ -75,19 +80,19 @@ class ChatListView extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         margin: const EdgeInsets.symmetric(vertical: 3),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.white,
-          border:
-              const Border(bottom: BorderSide(color: Colors.grey, width: 0.4)),
+          border: Border(bottom: BorderSide(color: Colors.grey, width: 0.4)),
         ),
         child: Row(
           children: [
             CircleAvatar(
               radius: 30,
               backgroundColor: Colors.grey[300],
-              backgroundImage: contactImage.startsWith('http')
-                  ? NetworkImage(contactImage)
-                  : AssetImage(contactImage) as ImageProvider,
+              backgroundImage:
+                  (contactImage.isNotEmpty && contactImage.startsWith('http'))
+                      ? NetworkImage(contactImage)
+                      : const AssetImage('assets/images/user_placeholder.png'),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -124,12 +129,8 @@ class ChatListView extends StatelessWidget {
     DateTime date = timestamp.toDate();
     Duration diff = DateTime.now().difference(date);
 
-    if (diff.inMinutes < 60) {
-      return '${diff.inMinutes} min';
-    } else if (diff.inHours < 24) {
-      return '${diff.inHours} h';
-    } else {
-      return '${diff.inDays} d';
-    }
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min';
+    if (diff.inHours < 24) return '${diff.inHours} h';
+    return '${diff.inDays} d';
   }
 }
