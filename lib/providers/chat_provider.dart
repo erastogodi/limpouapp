@@ -25,6 +25,7 @@ class ChatProvider extends ChangeNotifier {
       'receiverId': receiverId,
       'message': message,
       'timestamp': FieldValue.serverTimestamp(),
+      'read': false,
     };
 
     await _firestore
@@ -39,21 +40,39 @@ class ChatProvider extends ChangeNotifier {
       'lastMessageTime': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
+    // Atualiza o lastSeen do remetente
+    await _firestore.collection('users').doc(senderId).update({
+      'lastSeen': FieldValue.serverTimestamp(),
+    });
+
     notifyListeners();
   }
 
   Stream<List<MessageModel>> getMessages(String senderId, String receiverId) {
     final chatId = getChatId(receiverId);
+
     return _firestore
         .collection('messages')
         .doc(chatId)
         .collection('items')
         .orderBy('timestamp')
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => MessageModel.fromMap(doc.data()))
-          .toList();
+        .asyncMap((snapshot) async {
+      final List<MessageModel> messages = [];
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final message = MessageModel.fromMap(data);
+
+        // Atualiza para lido se a mensagem for do outro usuário e ainda não lida
+        if (message.receiverId == senderId && !(data['read'] ?? false)) {
+          await doc.reference.update({'read': true});
+        }
+
+        messages.add(message);
+      }
+
+      return messages;
     });
   }
 
@@ -72,7 +91,6 @@ class ChatProvider extends ChangeNotifier {
         final participants = List<String>.from(data['participants'] ?? []);
         final otherId = participants.firstWhere((id) => id != userId);
 
-        // 🔍 Busca nome e imagem do outro usuário
         final userDoc = await _firestore.collection('users').doc(otherId).get();
         final userData = userDoc.data();
 
@@ -88,5 +106,44 @@ class ChatProvider extends ChangeNotifier {
 
       yield chats;
     }
+  }
+
+  Future<void> deleteChat(String receiverId) async {
+    final chatId = getChatId(receiverId);
+    final messagesRef =
+        _firestore.collection('messages').doc(chatId).collection('items');
+
+    final batch = _firestore.batch();
+    final messagesSnapshot = await messagesRef.get();
+
+    for (final doc in messagesSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    batch.delete(_firestore.collection('chats').doc(chatId));
+    await batch.commit();
+    notifyListeners();
+  }
+
+  Future<void> blockAndReportUser(String receiverId, String reason) async {
+    final currentUserId = _auth.currentUser!.uid;
+
+    // 🔥 Bloqueia o usuário
+    await _firestore.collection('users').doc(currentUserId).update({
+      'blocked': FieldValue.arrayUnion([receiverId]),
+    });
+
+    // 🔥 Exclui o chat com a pessoa
+    await deleteChat(receiverId);
+
+    // 🔥 Registra denúncia com motivo
+    await _firestore.collection('reports').add({
+      'from': currentUserId,
+      'against': receiverId,
+      'reason': reason,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    notifyListeners();
   }
 }

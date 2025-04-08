@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:limpou25k/providers/agendamento_provider.dart';
 import 'package:limpou25k/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:limpou25k/providers/auth_provider.dart';
@@ -20,6 +21,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PropertyProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(
+            create: (_) => AgendamentoProvider()), // ✅ Aqui estava faltando
       ],
       child: const MyApp(),
     ),

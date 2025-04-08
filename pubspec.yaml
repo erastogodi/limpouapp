@@ -33,6 +33,8 @@ dependencies:
   glassmorphism: ^3.0.0
   date_picker_plus: ^4.1.0
   firebase_messaging: ^15.2.3
+  flutter_multi_formatter: ^2.13.7
+  numberpicker: ^2.1.2
   
 
 
@@ -48,6 +50,6 @@ flutter:
   # Seção de assets
   assets:
     - assets/images/logo.jpeg
-    - assets/images/ # Use esta linha se houver mais imagens na pasta
+    - assets/images/ 
     - assets/images/limpeza.jpg
     - assets/images/contratante.jpg

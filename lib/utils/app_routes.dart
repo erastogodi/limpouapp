@@ -11,6 +11,7 @@ import 'package:limpou25k/views/notifications_view.dart';
 import 'package:limpou25k/views/perfil_domestica_view.dart';
 import 'package:limpou25k/views/register_view.dart';
 import 'package:limpou25k/views/service_detail_view.dart';
+import 'package:limpou25k/views/agendar_servico_view.dart'; // ✅ IMPORTAÇÃO NOVA
 
 class AppRoutes {
   static const String login = '/';
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String chooseUserType = '/choose_user_type';
   static const String chatList = '/chat_list';
   static const String chatView = '/chat_view';
+  static const String agendarServico = '/agendar_servico'; // ✅ NOVA ROTA
   static const String addProperty = '/add_property';
   static const String createProperty = '/create_property';
   static const String notifications = '/notifications';
@@ -37,14 +39,6 @@ class AppRoutes {
     addProperty: (context) => const AddPropertyView(),
     createProperty: (context) => const CreatePropertyView(),
     notifications: (context) => const NotificationsView(),
-    serviceDetail: (context) {
-      final args =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-      return ServiceDetailsView(
-        property: args,
-        serviceId: args['id'] ?? '',
-      );
-    },
   };
 
   static Route<dynamic>? generateRoute(RouteSettings settings) {
@@ -61,6 +55,21 @@ class AppRoutes {
           );
         } else {
           return _errorPage('Erro: Nenhuma conversa encontrada.');
+        }
+
+      case agendarServico:
+        final args = settings.arguments as Map<String, dynamic>?;
+        if (args != null) {
+          return MaterialPageRoute(
+            builder: (_) => AgendarServicoView(
+              contractorId: args['contractorId'],
+              workerId: args['workerId'],
+              receiverInfo: args['receiverInfo'],
+              properties: List<Map<String, dynamic>>.from(args['properties']),
+            ),
+          );
+        } else {
+          return _errorPage('Erro: Dados do agendamento não encontrados.');
         }
 
       case perfilDomestica:
