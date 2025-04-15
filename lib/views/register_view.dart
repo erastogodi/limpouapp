@@ -269,10 +269,6 @@ class _RegisterViewState extends State<RegisterView> {
     );
   }
 
-  /// **🚀 Botão de Registrar**
-  /// **🚀 Botão de Registrar (Agora usa o Firebase Auth)**
-  /// **🚀 Botão de Registrar**
-  /// **🚀 Botão de Registrar (Agora com Firebase Auth e Debugging)**
   Widget buildRegisterButton(BuildContext context) {
     return ElevatedButton(
       onPressed: () async {

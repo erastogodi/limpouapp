@@ -1,45 +1,75 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:limpou25k/models/agendamento_model.dart';
+import '../models/agendamento_model.dart';
 
-class AgendamentoProvider with ChangeNotifier {
+class AgendamentoProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Cria um novo agendamento
   Future<void> criarAgendamento(AgendamentoModel agendamento) async {
-    try {
-      final docRef = _firestore.collection('agendamentos').doc();
+    await _firestore.collection('agendamentos').add(agendamento.toMap());
+  }
 
-      final novoAgendamento = agendamento.copyWith(
-        serviceId: docRef.id,
-        createdAt: DateTime.now(),
-        status: 'pending',
-        paymentConfirmed: false,
-        confirmedByContractor: false,
-        confirmedByWorker: false,
-      );
+  Stream<List<AgendamentoModel>> getAgendamentosPorUsuario(String uid) {
+    return _firestore
+        .collection('agendamentos')
+        .where(
+          Filter.or(
+            Filter("contractorId", isEqualTo: uid),
+            Filter("workerId", isEqualTo: uid),
+          ),
+        )
+        .orderBy("serviceDate")
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => AgendamentoModel.fromMap(doc.data(), doc.id))
+            .toList());
+  }
 
-      await docRef.set(novoAgendamento.toMap());
-    } catch (e) {
-      throw Exception("Erro ao criar agendamento: $e");
+  /// Atualiza o status de um agendamento
+  Future<void> atualizarStatus(String agendamentoId, String status) async {
+    await _firestore.collection('agendamentos').doc(agendamentoId).update({
+      'status': status,
+    });
+  }
+
+  /// Atualiza confirmação de pagamento
+  Future<void> confirmarPagamento(String agendamentoId) async {
+    await _firestore.collection('agendamentos').doc(agendamentoId).update({
+      'paymentConfirmed': true,
+    });
+  }
+
+  /// Atualiza confirmação do contratante ou trabalhador
+  Future<void> atualizarConfirmacoes({
+    required String agendamentoId,
+    bool? confirmadoPeloTrabalhador,
+    bool? confirmadoPeloContratante,
+  }) async {
+    Map<String, dynamic> updates = {};
+    if (confirmadoPeloTrabalhador != null) {
+      updates['confirmedByWorker'] = confirmadoPeloTrabalhador;
+    }
+    if (confirmadoPeloContratante != null) {
+      updates['confirmedByContractor'] = confirmadoPeloContratante;
+    }
+    if (updates.isNotEmpty) {
+      await _firestore
+          .collection('agendamentos')
+          .doc(agendamentoId)
+          .update(updates);
     }
   }
 
-  Future<void> atualizarStatus(String serviceId, String novoStatus) async {
+  Future<void> atualizarAgendamentoCompleto(
+      AgendamentoModel agendamento) async {
     try {
-      await _firestore.collection('agendamentos').doc(serviceId).update({
-        'status': novoStatus,
-      });
-      notifyListeners();
+      await _firestore
+          .collection('agendamentos')
+          .doc(agendamento.serviceId)
+          .update(agendamento.toMap());
     } catch (e) {
-      throw Exception("Erro ao atualizar status: $e");
+      throw Exception("Erro ao atualizar agendamento: $e");
     }
-  }
-
-  Future<void> aceitarAgendamento(String serviceId) async {
-    await atualizarStatus(serviceId, 'accepted');
-  }
-
-  Future<void> recusarAgendamento(String serviceId) async {
-    await atualizarStatus(serviceId, 'refused');
   }
 }

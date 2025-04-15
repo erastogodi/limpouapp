@@ -170,4 +170,25 @@ class PropertyProvider with ChangeNotifier {
       throw Exception("Erro ao buscar imóvel: $e");
     }
   }
+
+  /// ✅ NOVO: usado quando o imóvel pertence a outro usuário (ex: contratante)
+  Future<Map<String, dynamic>> getPropertyByIdFromUser(
+      String id, String userId) async {
+    try {
+      DocumentSnapshot snapshot = await _firestore
+          .collection("users")
+          .doc(userId)
+          .collection("properties")
+          .doc(id)
+          .get();
+
+      if (snapshot.exists) {
+        return {...snapshot.data() as Map<String, dynamic>, "id": snapshot.id};
+      } else {
+        throw Exception("Imóvel não encontrado.");
+      }
+    } catch (e) {
+      throw Exception("Erro ao buscar imóvel de outro usuário: $e");
+    }
+  }
 }

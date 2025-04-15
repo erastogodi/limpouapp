@@ -76,50 +76,66 @@ class ChatListView extends StatelessWidget {
           },
         );
       },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-        margin: const EdgeInsets.symmetric(vertical: 3),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(bottom: BorderSide(color: Colors.grey, width: 0.4)),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.grey[300],
-              backgroundImage:
-                  (contactImage.isNotEmpty && contactImage.startsWith('http'))
+      child: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+            margin: const EdgeInsets.symmetric(vertical: 3),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border:
+                  Border(bottom: BorderSide(color: Colors.grey, width: 0.4)),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: (contactImage.isNotEmpty &&
+                          contactImage.startsWith('http'))
                       ? NetworkImage(contactImage)
-                      : const AssetImage('assets/images/user_placeholder.png'),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    contactName,
-                    style: GoogleFonts.poppins(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                      : const AssetImage('assets/images/user_placeholder.png')
+                          as ImageProvider,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        contactName,
+                        style: GoogleFonts.poppins(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        lastMessage,
+                        style: GoogleFonts.poppins(
+                            fontSize: 15, color: Colors.black54),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    lastMessage,
-                    style: GoogleFonts.poppins(
-                        fontSize: 15, color: Colors.black54),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+                ),
+                Text(
+                  _formatTimestamp(lastMessageTime),
+                  style:
+                      GoogleFonts.poppins(fontSize: 13, color: Colors.black45),
+                ),
+              ],
             ),
-            Text(
-              _formatTimestamp(lastMessageTime),
-              style: GoogleFonts.poppins(fontSize: 13, color: Colors.black45),
+          ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Icon(
+              Icons.more_vert,
+              size: 20,
+              color: Colors.black.withOpacity(0.3), // Ícone transparente
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

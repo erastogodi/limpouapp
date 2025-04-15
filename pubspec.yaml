@@ -35,6 +35,7 @@ dependencies:
   firebase_messaging: ^15.2.3
   flutter_multi_formatter: ^2.13.7
   numberpicker: ^2.1.2
+  flutter_animated_button: ^2.0.4
   
 
 

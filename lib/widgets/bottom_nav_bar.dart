@@ -4,6 +4,7 @@ import 'package:limpou25k/views/home_contratante_view.dart';
 import 'package:limpou25k/views/chat_list_view.dart';
 import 'package:limpou25k/views/user_profile_view.dart';
 import 'package:limpou25k/views/add_property_view.dart';
+import 'package:limpou25k/views/agendamentos_list_view.dart'; // ✅ IMPORTAR DIRETO
 
 class BottomNavBar extends StatefulWidget {
   final bool isDomestic;
@@ -26,35 +27,37 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
     // 🔹 Páginas da Doméstica
     _domesticPages = [
-      const HomePage(), // Página inicial da doméstica
-      const ChatListView(), // Lista de chats
+      const HomePage(),
+      const ChatListView(),
+      const AgendamentosListView(), // ✅ Aqui usamos o widget direto
       const UserProfileView(
         isDomestic: true,
         userType: 'domestica',
-      ), // Perfil da doméstica
+      ),
     ];
 
-    // 🔹 Páginas do Contratante (Corrigido para usar HomeContratanteView)
+    // 🔹 Páginas do Contratante
     _contratantePages = [
-      const HomeContratanteView(), // ✅ Página inicial correta do contratante
-      const AddPropertyView(), // ✅ Novo (Adicionar Imóvel)
-      const ChatListView(), // ✅ Lista de chats
+      const HomeContratanteView(),
+      const AddPropertyView(),
+      const ChatListView(),
+      const AgendamentosListView(), // ✅ Aqui também
       const UserProfileView(
         isDomestic: false,
         userType: 'contratante',
-      ), // ✅ Perfil do contratante
+      ),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDomestic = widget.isDomestic;
+    final selectedPages = isDomestic ? _domesticPages : _contratantePages;
+
     return Scaffold(
-      body: widget.isDomestic
-          ? _domesticPages[_selectedIndex]
-          : _contratantePages[_selectedIndex],
+      body: selectedPages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor:
-            Colors.white.withOpacity(0.9), // 🔹 Cor branca translúcida
+        backgroundColor: Colors.white.withOpacity(0.9),
         selectedItemColor: Colors.amber.shade700,
         unselectedItemColor: Colors.grey,
         currentIndex: _selectedIndex,
@@ -64,37 +67,44 @@ class _BottomNavBarState extends State<BottomNavBar> {
             _selectedIndex = index;
           });
         },
-        items: widget.isDomestic
+        items: isDomestic
             ? [
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.home),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
                   label: 'Início',
                 ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.chat),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.chat),
                   label: 'Chat',
                 ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.person),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.event_note),
+                  label: 'Agendamentos',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
                   label: 'Perfil',
                 ),
               ]
             : [
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.home),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
                   label: 'Início',
                 ),
-                BottomNavigationBarItem(
-                  icon: const Icon(
-                      Icons.add_circle_outline), // **Novo** como 2º ícone
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.add_circle_outline),
                   label: 'Novo',
                 ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.chat),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.chat),
                   label: 'Chat',
                 ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.person),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.event_note),
+                  label: 'Agendamentos',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
                   label: 'Perfil',
                 ),
               ],

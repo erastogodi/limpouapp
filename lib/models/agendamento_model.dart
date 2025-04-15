@@ -49,7 +49,7 @@ class AgendamentoModel {
     };
   }
 
-  factory AgendamentoModel.fromMap(Map<String, dynamic> map) {
+  factory AgendamentoModel.fromMap(Map<String, dynamic> map, String id) {
     return AgendamentoModel(
       serviceId: map['serviceId'],
       propertyId: map['propertyId'],

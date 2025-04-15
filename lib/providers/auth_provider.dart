@@ -6,7 +6,10 @@ class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// **🔥 REGISTRO DE NOVO USUÁRIO**
+  /// ✅ Retorna o usuário autenticado atual
+  User? get user => _auth.currentUser;
+
+  /// 🔥 REGISTRO DE NOVO USUÁRIO
   Future<UserCredential> signUp({
     required String name,
     required String cpf,
@@ -39,7 +42,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// **✅ LOGIN DE USUÁRIO**
+  /// ✅ LOGIN DE USUÁRIO
   Future<UserCredential?> signIn({
     required String email,
     required String password,
@@ -53,7 +56,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// **🔍 BUSCAR O TIPO DE USUÁRIO NO FIRESTORE**
+  /// 🔍 BUSCAR O TIPO DE USUÁRIO NO FIRESTORE
   Future<String?> getUserType(String uid) async {
     try {
       DocumentSnapshot userDoc =
@@ -64,12 +67,13 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// **🚪 LOGOUT DO USUÁRIO**
+  /// 🚪 LOGOUT DO USUÁRIO
   Future<void> signOut() async {
     await _auth.signOut();
+    notifyListeners();
   }
 
-  /// **👤 PEGAR O USUÁRIO LOGADO ATUALMENTE**
+  /// 👤 PEGAR O USUÁRIO LOGADO ATUALMENTE
   User? getCurrentUser() {
     return _auth.currentUser;
   }

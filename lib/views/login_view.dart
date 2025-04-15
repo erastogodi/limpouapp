@@ -38,14 +38,16 @@ class _LoginViewState extends State<LoginView> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const BottomNavBar(isDomestic: true),
+              builder: (_) => const BottomNavBar(
+                  isDomestic: true), // ✅ estrutura da doméstica
             ),
           );
         } else {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const BottomNavBar(isDomestic: false),
+              builder: (_) => const BottomNavBar(
+                  isDomestic: false), // ✅ estrutura do contratante
             ),
           );
         }

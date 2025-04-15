@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:limpou25k/models/agendamento_model.dart';
 import 'package:limpou25k/views/add_property_view.dart';
 import 'package:limpou25k/views/chat_list_view.dart';
 import 'package:limpou25k/views/chat_view.dart';
@@ -11,7 +12,9 @@ import 'package:limpou25k/views/notifications_view.dart';
 import 'package:limpou25k/views/perfil_domestica_view.dart';
 import 'package:limpou25k/views/register_view.dart';
 import 'package:limpou25k/views/service_detail_view.dart';
-import 'package:limpou25k/views/agendar_servico_view.dart'; // ✅ IMPORTAÇÃO NOVA
+import 'package:limpou25k/views/agendar_servico_view.dart';
+import 'package:limpou25k/views/agendamentos_list_view.dart';
+import 'package:limpou25k/views/confirmar_agendamento_view.dart'; // ✅ IMPORT NOVO
 
 class AppRoutes {
   static const String login = '/';
@@ -21,7 +24,10 @@ class AppRoutes {
   static const String chooseUserType = '/choose_user_type';
   static const String chatList = '/chat_list';
   static const String chatView = '/chat_view';
-  static const String agendarServico = '/agendar_servico'; // ✅ NOVA ROTA
+  static const String agendarServico = '/agendar_servico';
+  static const String agendamentosList = '/agendamentos_list';
+  static const String confirmarAgendamento =
+      '/confirmar_agendamento'; // ✅ NOVA ROTA
   static const String addProperty = '/add_property';
   static const String createProperty = '/create_property';
   static const String notifications = '/notifications';
@@ -39,6 +45,7 @@ class AppRoutes {
     addProperty: (context) => const AddPropertyView(),
     createProperty: (context) => const CreatePropertyView(),
     notifications: (context) => const NotificationsView(),
+    agendamentosList: (context) => const AgendamentosListView(),
   };
 
   static Route<dynamic>? generateRoute(RouteSettings settings) {
@@ -70,6 +77,20 @@ class AppRoutes {
           );
         } else {
           return _errorPage('Erro: Dados do agendamento não encontrados.');
+        }
+
+      case confirmarAgendamento:
+        final agendamento = settings.arguments as AgendamentoModel?;
+        if (agendamento != null) {
+          return MaterialPageRoute(
+            builder: (_) => ConfirmarAgendamentoView(
+              agendamento: agendamento,
+              contractorData: {},
+              propertyData: {},
+            ),
+          );
+        } else {
+          return _errorPage('Erro: Agendamento não fornecido.');
         }
 
       case perfilDomestica:
