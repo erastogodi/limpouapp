@@ -8,6 +8,7 @@ import 'package:limpou25k/utils/app_routes.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:limpou25k/providers/property_provider.dart';
 import 'package:limpou25k/providers/chat_provider.dart';
+import 'package:limpou25k/providers/avaliacao_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,8 +22,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PropertyProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
-        ChangeNotifierProvider(
-            create: (_) => AgendamentoProvider()), // ✅ Aqui estava faltando
+        ChangeNotifierProvider(create: (_) => AgendamentoProvider()),
+        ChangeNotifierProvider(create: (_) => AvaliacaoProvider()),
       ],
       child: const MyApp(),
     ),

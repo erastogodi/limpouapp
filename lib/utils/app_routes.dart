@@ -14,7 +14,8 @@ import 'package:limpou25k/views/register_view.dart';
 import 'package:limpou25k/views/service_detail_view.dart';
 import 'package:limpou25k/views/agendar_servico_view.dart';
 import 'package:limpou25k/views/agendamentos_list_view.dart';
-import 'package:limpou25k/views/confirmar_agendamento_view.dart'; // ✅ IMPORT NOVO
+import 'package:limpou25k/views/confirmar_agendamento_view.dart';
+import 'package:limpou25k/views/avaliacoes_view.dart'; // ✅ NOVO IMPORT
 
 class AppRoutes {
   static const String login = '/';
@@ -26,14 +27,14 @@ class AppRoutes {
   static const String chatView = '/chat_view';
   static const String agendarServico = '/agendar_servico';
   static const String agendamentosList = '/agendamentos_list';
-  static const String confirmarAgendamento =
-      '/confirmar_agendamento'; // ✅ NOVA ROTA
+  static const String confirmarAgendamento = '/confirmar_agendamento';
   static const String addProperty = '/add_property';
   static const String createProperty = '/create_property';
   static const String notifications = '/notifications';
   static const String perfilDomestica = '/perfil_domestica';
   static const String serviceDetail = '/service_detail';
   static const String userProfile = '/user_profile';
+  static const String avaliacoes = '/avaliacoes'; // ✅ NOVA ROTA
 
   static final Map<String, WidgetBuilder> routes = {
     login: (context) => const LoginView(),
@@ -114,6 +115,20 @@ class AppRoutes {
           );
         } else {
           return _errorPage('Erro: Nenhum serviço encontrado.');
+        }
+
+      case avaliacoes:
+        final args = settings.arguments as Map<String, dynamic>?;
+        if (args != null) {
+          return MaterialPageRoute(
+            builder: (_) => AvaliacoesView(
+              agendamento: args['agendamento'],
+              userData: args['userData'],
+              propertyData: args['propertyData'],
+            ),
+          );
+        } else {
+          return _errorPage('Erro: Dados da avaliação não encontrados.');
         }
 
       default:

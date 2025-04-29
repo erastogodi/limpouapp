@@ -77,27 +77,6 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
     }
   }
 
-  void _saveProperty() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.pop(context, {
-        "propertyType": selectedPropertyType,
-        "spaceType": selectedSpaceType,
-        "address": _addressController.text,
-        "city": _cityStateController.text.split(", ").first.trim(),
-        "state": _cityStateController.text.split(", ").last.trim(),
-        "cep": _cepController.text,
-        "date": _selectedDate != "Selecionar Data"
-            ? _selectedDate
-            : "Não informada",
-        "bedrooms": selectedBedrooms,
-        "bathrooms": selectedBathrooms,
-        "size": "${_selectedSize.toInt()}m²",
-        "areasToClean": _selectedAreas,
-        "materialsProvided": _materialsProvided ? "Sim" : "Não",
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

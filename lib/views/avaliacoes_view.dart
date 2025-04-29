@@ -1,10 +1,24 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:intl/intl.dart';
+import 'package:limpou25k/models/agendamento_model.dart';
+import 'package:limpou25k/models/avaliacao_model.dart';
+import 'package:limpou25k/providers/avaliacao_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AvaliacoesView extends StatefulWidget {
-  const AvaliacoesView({super.key});
+  final AgendamentoModel agendamento;
+  final Map userData;
+  final Map propertyData;
 
-  static const routeName = '/avaliacoes';
+  const AvaliacoesView({
+    super.key,
+    required this.agendamento,
+    required this.userData,
+    required this.propertyData,
+  });
 
   @override
   State<AvaliacoesView> createState() => _AvaliacoesViewState();
@@ -20,13 +34,98 @@ class _AvaliacoesViewState extends State<AvaliacoesView> {
     super.dispose();
   }
 
+  void _enviarAvaliacao() async {
+    final authUser = FirebaseAuth.instance.currentUser;
+
+    // Validação básica
+    if (authUser == null ||
+        _nota == 0.0 ||
+        _comentarioController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos para avaliar.')),
+      );
+      return;
+    }
+
+    // 1. Tenta obter o serviceId (documentId do Firestore)
+    String agendamentoDocId = widget.agendamento.serviceId;
+
+    // 2. Verifica se está vazio
+    if (agendamentoDocId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Erro interno: ID do agendamento está vazio.')),
+      );
+      return;
+    }
+
+    // 3. Tenta buscar o agendamento no Firestore
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('agendamentos')
+        .doc(agendamentoDocId)
+        .get();
+
+    // 4. Verifica se o documento existe
+    if (!docSnapshot.exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao localizar o agendamento.')),
+      );
+      return;
+    }
+
+    // 5. Se o campo serviceId estiver desatualizado, sincroniza
+    final data = docSnapshot.data()!;
+    final docId = docSnapshot.id;
+
+    if (data['serviceId'] != docId) {
+      await FirebaseFirestore.instance
+          .collection('agendamentos')
+          .doc(docId)
+          .update({'serviceId': docId});
+    }
+
+    // 6. Recria o agendamento com ID sincronizado
+    final agendamentoAtualizado = widget.agendamento.copyWith(serviceId: docId);
+
+    // 7. Determina quem é o avaliado (a outra parte)
+    final String avaliadoId = authUser.uid == agendamentoAtualizado.contractorId
+        ? agendamentoAtualizado.workerId
+        : agendamentoAtualizado.contractorId;
+
+    final avaliacao = AvaliacaoModel(
+      avaliacaoId: '',
+      agendamentoId: docId,
+      avaliadorId: authUser.uid,
+      avaliadoId: avaliadoId,
+      nota: _nota.toInt(),
+      comentario: _comentarioController.text.trim(),
+      data: DateTime.now(),
+    );
+
+    // 8. Envia para o Firestore via Provider
+    await Provider.of<AvaliacaoProvider>(context, listen: false)
+        .enviarAvaliacao(avaliacao);
+
+    // 9. Feedback + redirecionamento
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Avaliação enviada com sucesso!')),
+      );
+      Navigator.pushNamedAndRemoveUntil(
+          context, '/agendamentos_list', (route) => false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final dataServico =
+        DateFormat('dd/MM/yyyy').format(widget.agendamento.serviceDate);
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.amber.shade700,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -47,23 +146,19 @@ class _AvaliacoesViewState extends State<AvaliacoesView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _cardAvaliacao(),
+              _cardAvaliacao(dataServico),
               const SizedBox(height: 16),
               _cardNotaComentario(),
-              const SizedBox(height: 16),
-              _cardDetalhesAgendamento(),
               const SizedBox(height: 24),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Colors.amber.shade700,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
-                  // Implementar lógica de envio da avaliação aqui
-                },
+                onPressed: _enviarAvaliacao,
                 child: const Text(
                   'Enviar Avaliação',
                   style: TextStyle(fontSize: 16, color: Colors.white),
@@ -76,7 +171,7 @@ class _AvaliacoesViewState extends State<AvaliacoesView> {
     );
   }
 
-  Widget _cardAvaliacao() {
+  Widget _cardAvaliacao(String dataServico) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -88,20 +183,35 @@ class _AvaliacoesViewState extends State<AvaliacoesView> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'Avaliação do Serviço',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Como foi sua experiência?',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Quem você está avaliando?',
+                const SizedBox(height: 12),
+                const Text(
+                  'Data do Serviço:',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  dataServico,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Nome do usuário avaliado:',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  widget.userData['name'] ?? 'Usuário',
+                  style: const TextStyle(
+                    fontSize: 18, // AUMENTADO
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -110,7 +220,10 @@ class _AvaliacoesViewState extends State<AvaliacoesView> {
           CircleAvatar(
             radius: 30,
             backgroundColor: Colors.grey[200],
-            backgroundImage: NetworkImage('https://via.placeholder.com/150'),
+            backgroundImage: widget.userData['profilePicture'] != null
+                ? NetworkImage(widget.userData['profilePicture'])
+                : const AssetImage('assets/images/user_placeholder.png')
+                    as ImageProvider,
           ),
         ],
       ),
@@ -140,9 +253,9 @@ class _AvaliacoesViewState extends State<AvaliacoesView> {
               allowHalfRating: false,
               itemCount: 5,
               itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-              itemBuilder: (context, _) => const Icon(
+              itemBuilder: (context, _) => Icon(
                 Icons.star,
-                color: Colors.deepPurple,
+                color: Colors.amber.shade700,
               ),
               onRatingUpdate: (rating) {
                 setState(() {
@@ -169,52 +282,6 @@ class _AvaliacoesViewState extends State<AvaliacoesView> {
                 borderSide: BorderSide.none,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cardDetalhesAgendamento() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'ID do Agendamento',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '#AG12345',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
-              Text(
-                'Data do Serviço',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '15/06/2023',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-            ],
           ),
         ],
       ),

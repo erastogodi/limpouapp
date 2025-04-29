@@ -5,11 +5,19 @@ import '../models/agendamento_model.dart';
 class AgendamentoProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Cria um novo agendamento
+  /// Cria um novo agendamento e salva o ID do documento como `serviceId`
   Future<void> criarAgendamento(AgendamentoModel agendamento) async {
-    await _firestore.collection('agendamentos').add(agendamento.toMap());
+    // Cria a referência do documento com ID gerado automaticamente
+    final docRef = _firestore.collection('agendamentos').doc();
+
+    // Atualiza o modelo com o ID correto
+    final agendamentoComId = agendamento.copyWith(serviceId: docRef.id);
+
+    // Salva no Firestore
+    await docRef.set(agendamentoComId.toMap());
   }
 
+  /// Stream de agendamentos onde o usuário é contratante ou trabalhador
   Stream<List<AgendamentoModel>> getAgendamentosPorUsuario(String uid) {
     return _firestore
         .collection('agendamentos')
@@ -61,6 +69,7 @@ class AgendamentoProvider extends ChangeNotifier {
     }
   }
 
+  /// Atualiza todos os dados de um agendamento
   Future<void> atualizarAgendamentoCompleto(
       AgendamentoModel agendamento) async {
     try {

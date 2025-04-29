@@ -36,6 +36,8 @@ dependencies:
   flutter_multi_formatter: ^2.13.7
   numberpicker: ^2.1.2
   flutter_animated_button: ^2.0.4
+  location: ^8.0.0
+  geocoding: ^3.0.0
   
 
 

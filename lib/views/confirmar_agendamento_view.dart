@@ -11,12 +11,14 @@ import 'package:provider/provider.dart';
 
 class ConfirmarAgendamentoView extends StatefulWidget {
   final AgendamentoModel agendamento;
+  final Map propertyData;
+  final Map contractorData;
 
   const ConfirmarAgendamentoView({
     super.key,
     required this.agendamento,
-    required Map propertyData,
-    required Map contractorData,
+    required this.propertyData,
+    required this.contractorData,
   });
 
   @override
@@ -42,18 +44,15 @@ class _ConfirmarAgendamentoViewState extends State<ConfirmarAgendamentoView> {
           Provider.of<PropertyProvider>(context, listen: false);
       final authUser = FirebaseAuth.instance.currentUser;
 
-      // 👇 Descobre quem é o outro usuário (o que deve aparecer na tela)
       final isLogadoContratante =
           authUser?.uid == widget.agendamento.contractorId;
       final uidOutroUsuario = isLogadoContratante
           ? widget.agendamento.workerId
           : widget.agendamento.contractorId;
 
-      // 🔁 Busca os dados do outro usuário
       await userProvider.fetchUserById(uidOutroUsuario);
       userData = userProvider.selectedUser?.toMap();
 
-      // 🔁 Busca os dados da propriedade (pertence sempre ao contratante)
       propertyData = await propertyProvider.getPropertyByIdFromUser(
         widget.agendamento.propertyId,
         widget.agendamento.contractorId,
@@ -72,11 +71,8 @@ class _ConfirmarAgendamentoViewState extends State<ConfirmarAgendamentoView> {
     final agendamento = widget.agendamento;
     final isLogadoContratante = authUser.uid == agendamento.contractorId;
 
-    final bool jaConfirmadoContratante = agendamento.confirmedByContractor;
-    final bool jaConfirmadoDiarista = agendamento.confirmedByWorker;
-
-    bool novoConfirmedByContractor = jaConfirmadoContratante;
-    bool novoConfirmedByWorker = jaConfirmadoDiarista;
+    bool novoConfirmedByContractor = agendamento.confirmedByContractor;
+    bool novoConfirmedByWorker = agendamento.confirmedByWorker;
     String novoStatus = "aguardando confirmação";
 
     if (isLogadoContratante) {
@@ -98,11 +94,12 @@ class _ConfirmarAgendamentoViewState extends State<ConfirmarAgendamentoView> {
     await Provider.of<AgendamentoProvider>(context, listen: false)
         .atualizarAgendamentoCompleto(novoAgendamento);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Agendamento atualizado: $novoStatus')),
-    );
-
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Agendamento atualizado: $novoStatus')),
+      );
+      Navigator.pop(context);
+    }
   }
 
   TextStyle get _sectionTitle => GoogleFonts.poppins(
@@ -133,10 +130,258 @@ class _ConfirmarAgendamentoViewState extends State<ConfirmarAgendamentoView> {
     return value?.toString() ?? '---';
   }
 
+  Widget _buildBotaoVerde(String texto, VoidCallback onPressed) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFAEEEC4), Color(0xFF7DD89C)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.12),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            texto,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w400,
+              fontSize: 14.5,
+              color: Colors.black.withOpacity(0.7),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBotaoVermelho(String texto, VoidCallback onPressed) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF9D1D1), Color(0xFFF47777)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.12),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            texto,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w400,
+              fontSize: 14.5,
+              color: Colors.black.withOpacity(0.7),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBotaoAmarelo(String texto, VoidCallback onPressed) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFF176), Color(0xFFFFEE58)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.amber.withOpacity(0.12),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            texto,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w400,
+              fontSize: 14.5,
+              color: Colors.black.withOpacity(0.7),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBotoesPorStatus(String status, BuildContext context) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                    child:
+                        _buildBotaoVerde("Aceitar", _atualizarStatusAceitar)),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: _buildBotaoVermelho("Recusar", () async {
+                  await FirebaseFirestore.instance
+                      .collection('agendamentos')
+                      .doc(widget.agendamento.serviceId)
+                      .delete();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Agendamento recusado.")),
+                    );
+                    Navigator.pop(context);
+                  }
+                })),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/agendar-servico',
+                    arguments: {
+                      'contractorId': widget.agendamento.workerId,
+                      'workerId': widget.agendamento.contractorId,
+                      'receiverInfo': userData ?? {},
+                      'properties': [],
+                    },
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.amber.shade800,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.amber.shade800, width: 1.5),
+                  ),
+                  textStyle: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                child: const Text("Fazer Contra Proposta"),
+              ),
+            ),
+          ],
+        );
+      case 'aguardando confirmação':
+      case 'aguardando pagamento':
+      case 'confirmado':
+        return Row(
+          children: [
+            Expanded(
+                child: _buildBotaoAmarelo("Editar Proposta", () {
+              Navigator.pushNamed(
+                context,
+                '/agendar-servico',
+                arguments: {
+                  'contractorId': widget.agendamento.workerId,
+                  'workerId': widget.agendamento.contractorId,
+                  'receiverInfo': userData ?? {},
+                  'properties': [],
+                },
+              );
+            })),
+            const SizedBox(width: 10),
+            Expanded(
+                child: _buildBotaoVermelho("Cancelar", () async {
+              await FirebaseFirestore.instance
+                  .collection('agendamentos')
+                  .doc(widget.agendamento.serviceId)
+                  .delete();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Agendamento cancelado.")),
+                );
+                Navigator.pop(context);
+              }
+            })),
+          ],
+        );
+      case 'finalizado':
+        return Center(
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              // Recarrega o agendamento diretamente do Firestore
+              final docSnapshot = await FirebaseFirestore.instance
+                  .collection('agendamentos')
+                  .doc(widget.agendamento.serviceId)
+                  .get();
+
+              if (docSnapshot.exists) {
+                final agendamentoAtualizado = AgendamentoModel.fromMap(
+                  docSnapshot.data()!,
+                  docSnapshot.id,
+                );
+
+                Navigator.pushNamed(
+                  context,
+                  '/avaliacoes',
+                  arguments: {
+                    'agendamento': agendamentoAtualizado,
+                    'userData': userData,
+                    'propertyData': propertyData,
+                  },
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("Erro ao carregar agendamento.")),
+                );
+              }
+            },
+            icon: const Icon(Icons.star),
+            label: const Text("Avaliar Serviço Realizado"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 251, 255, 0),
+              foregroundColor: const Color.fromARGB(255, 85, 85, 85),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              textStyle: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        );
+
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ag = widget.agendamento;
-
     final valorComTaxa = (ag.price * 1.05).toStringAsFixed(2);
     final horaFormatada =
         DateFormat('dd/MM/yyyy – HH:mm').format(ag.serviceDate);
@@ -222,163 +467,7 @@ class _ConfirmarAgendamentoViewState extends State<ConfirmarAgendamentoView> {
                         style: _text),
                   ]),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () async {
-                            final authUser = FirebaseAuth.instance.currentUser;
-                            if (authUser == null) return;
-
-                            final ag = widget.agendamento;
-                            final isContratante =
-                                authUser.uid == ag.contractorId;
-
-                            bool confirmedByContractor =
-                                ag.confirmedByContractor;
-                            bool confirmedByWorker = ag.confirmedByWorker;
-                            String novoStatus = "aguardando confirmação";
-
-                            if (isContratante) {
-                              confirmedByContractor = true;
-                            } else {
-                              confirmedByWorker = true;
-                            }
-
-                            if (confirmedByContractor && confirmedByWorker) {
-                              novoStatus = "aguardando pagamento";
-                            }
-
-                            final novoAgendamento = ag.copyWith(
-                              confirmedByContractor: confirmedByContractor,
-                              confirmedByWorker: confirmedByWorker,
-                              status: novoStatus,
-                            );
-
-                            await Provider.of<AgendamentoProvider>(context,
-                                    listen: false)
-                                .atualizarAgendamentoCompleto(novoAgendamento);
-
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content:
-                                        Text('Status atualizado: $novoStatus')),
-                              );
-                              Navigator.pop(context);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFAEEEC4), Color(0xFF7DD89C)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.green.withOpacity(0.12),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                "Aceitar",
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14.5,
-                                  color: Colors.black.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () async {
-                            await FirebaseFirestore.instance
-                                .collection('agendamentos')
-                                .doc(widget.agendamento.serviceId)
-                                .delete();
-
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text("Agendamento recusado.")),
-                              );
-                              Navigator.pop(context);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFF9D1D1), Color(0xFFF47777)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withOpacity(0.12),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                "Recusar",
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14.5,
-                                  color: Colors.black.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/agendar-servico',
-                          arguments: {
-                            'contractorId': ag.workerId,
-                            'workerId': ag.contractorId,
-                            'receiverInfo': userData ?? {},
-                            'properties': [],
-                          },
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.amber.shade800,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(
-                              color: Colors.amber.shade800, width: 1.5),
-                        ),
-                        textStyle: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                      child: const Text("Fazer Contra Proposta"),
-                    ),
-                  ),
+                  _buildBotoesPorStatus(ag.status, context),
                   const SizedBox(height: 20),
                 ],
               ),

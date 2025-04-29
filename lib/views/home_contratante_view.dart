@@ -17,7 +17,10 @@ class _HomeContratanteViewState extends State<HomeContratanteView> {
   @override
   void initState() {
     super.initState();
-    Provider.of<UserProvider>(context, listen: false).fetchDomesticas();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<UserProvider>(context, listen: false).fetchDomesticas();
+    });
   }
 
   @override

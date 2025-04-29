@@ -27,7 +27,7 @@ class AvaliacaoModel {
       'avaliadoId': avaliadoId,
       'nota': nota,
       'comentario': comentario,
-      'data': data,
+      'data': Timestamp.fromDate(data),
     };
   }
 
@@ -37,9 +37,31 @@ class AvaliacaoModel {
       agendamentoId: map['agendamentoId'] ?? '',
       avaliadorId: map['avaliadorId'] ?? '',
       avaliadoId: map['avaliadoId'] ?? '',
-      nota: map['nota'] ?? 0,
+      nota: (map['nota'] ?? 0) is int
+          ? map['nota']
+          : int.tryParse(map['nota'].toString()) ?? 0,
       comentario: map['comentario'] ?? '',
       data: (map['data'] as Timestamp).toDate(),
+    );
+  }
+
+  AvaliacaoModel copyWith({
+    String? avaliacaoId,
+    String? agendamentoId,
+    String? avaliadorId,
+    String? avaliadoId,
+    int? nota,
+    String? comentario,
+    DateTime? data,
+  }) {
+    return AvaliacaoModel(
+      avaliacaoId: avaliacaoId ?? this.avaliacaoId,
+      agendamentoId: agendamentoId ?? this.agendamentoId,
+      avaliadorId: avaliadorId ?? this.avaliadorId,
+      avaliadoId: avaliadoId ?? this.avaliadoId,
+      nota: nota ?? this.nota,
+      comentario: comentario ?? this.comentario,
+      data: data ?? this.data,
     );
   }
 }
