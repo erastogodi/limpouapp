@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -168,5 +170,77 @@ class UserProvider extends ChangeNotifier {
   void clearSelectedUser() {
     selectedUser = null;
     notifyListeners();
+  }
+
+  Future<void> adicionarDiaristasSimuladas() async {
+    final baseLat = user?.latitude ?? 0.0;
+    final baseLon = user?.longitude ?? 0.0;
+
+    final List<int> raios = [10, 20, 30, 40, 50];
+
+    for (int km in raios) {
+      final deslocamentoLat = km / 111.0;
+      final deslocamentoLon = km / (111.0 * cos(baseLat * pi / 180));
+
+      final lat = baseLat + deslocamentoLat;
+      final lon = baseLon + deslocamentoLon;
+
+      final docRef = _firestore.collection("users").doc();
+
+      final diarista = {
+        'name': 'Diarista ${km}km',
+        'email': 'diarista${km}@teste.com',
+        'phone': '99999-000$km',
+        'aboutMe': 'Diarista com disponibilidade a $km km',
+        'availability': ['segunda', 'sexta'],
+        'userType': 'Doméstica',
+        'profilePicture': '',
+        'latitude': lat,
+        'longitude': lon,
+        'street': 'Rua Simulada $km',
+        'neighborhood': 'Bairro $km',
+        'city': 'Cidade Exemplo',
+        'state': 'Estado',
+        'country': 'Brasil',
+      };
+
+      await docRef.set(diarista);
+
+      final diaristaId = docRef.id;
+
+      // ➕ Simular avaliações reais (3 a 5)
+      for (int i = 0; i < 3 + Random().nextInt(3); i++) {
+        await _firestore.collection('avaliacoes').add({
+          'avaliacaoId': '',
+          'agendamentoId': '',
+          'avaliadorId': 'simulado',
+          'avaliadoId': diaristaId,
+          'nota': 3 + Random().nextInt(3), // 3 a 5
+          'comentario': 'Boa diarista.',
+          'data': Timestamp.now(),
+        });
+      }
+
+      // ➕ Simular agendamentos finalizados (5 a 10)
+      for (int i = 0; i < 5 + Random().nextInt(6); i++) {
+        await _firestore.collection('agendamentos').add({
+          'serviceId': '',
+          'propertyId': '',
+          'createdBy': 'simulado',
+          'contractorId': 'simulado_contratante',
+          'workerId': diaristaId,
+          'status': 'finalizado',
+          'price': 120.0,
+          'paymentConfirmed': true,
+          'serviceDate': DateTime.now().subtract(Duration(days: i * 5)),
+          'createdAt': DateTime.now().subtract(Duration(days: i * 5 + 1)),
+          'notes': 'Serviço concluído com sucesso',
+          'confirmedByWorker': true,
+          'confirmedByContractor': true,
+        });
+      }
+    }
+
+    print("✅ Diaristas simuladas com agendamentos e avaliações adicionadas!");
   }
 }

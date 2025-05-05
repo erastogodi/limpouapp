@@ -19,23 +19,18 @@ class PropertyProvider with ChangeNotifier {
     required String size,
     required List<String> areasToClean,
     required bool materialsProvided,
+    required double latitude,
+    required double longitude,
   }) async {
     try {
-      // 🔥 Obtendo o usuário autenticado
       User? user = _auth.currentUser;
-      if (user == null) {
-        throw Exception("Usuário não autenticado.");
-      }
+      if (user == null) throw Exception("Usuário não autenticado.");
 
-      // 🔥 Criando referência ao documento do usuário
       DocumentReference userRef = _firestore.collection("users").doc(user.uid);
-
-      // 🔥 Criando referência à coleção de imóveis dentro do usuário
       CollectionReference propertiesRef = userRef.collection("properties");
 
-      // 🔥 Adicionando os dados do imóvel
       await propertiesRef.add({
-        "userId": user.uid, // Associando o imóvel ao usuário
+        "userId": user.uid,
         "propertyType": propertyType,
         "spaceType": spaceType,
         "address": address,
@@ -48,34 +43,14 @@ class PropertyProvider with ChangeNotifier {
         "size": size,
         "areasToClean": areasToClean,
         "materialsProvided": materialsProvided ? "Sim" : "Não",
+        "latitude": latitude,
+        "longitude": longitude,
         "createdAt": FieldValue.serverTimestamp(),
       });
 
       notifyListeners();
     } catch (e) {
       throw Exception("Erro ao adicionar imóvel: $e");
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getUserProperties() async {
-    try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception("Usuário não autenticado.");
-      }
-
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection("users")
-          .doc(user.uid)
-          .collection("properties")
-          .orderBy("createdAt", descending: true)
-          .get();
-
-      return snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .toList();
-    } catch (e) {
-      throw Exception("Erro ao obter propriedades: $e");
     }
   }
 
@@ -93,12 +68,12 @@ class PropertyProvider with ChangeNotifier {
     required String size,
     required List<String> areasToClean,
     required bool materialsProvided,
+    required double latitude,
+    required double longitude,
   }) async {
     try {
       User? user = _auth.currentUser;
-      if (user == null) {
-        throw Exception("Usuário não autenticado.");
-      }
+      if (user == null) throw Exception("Usuário não autenticado.");
 
       await _firestore
           .collection("users")
@@ -118,6 +93,8 @@ class PropertyProvider with ChangeNotifier {
         "size": size,
         "areasToClean": areasToClean,
         "materialsProvided": materialsProvided ? "Sim" : "Não",
+        "latitude": latitude,
+        "longitude": longitude,
         "updatedAt": FieldValue.serverTimestamp(),
       });
 
@@ -127,12 +104,30 @@ class PropertyProvider with ChangeNotifier {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getUserProperties() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) throw Exception("Usuário não autenticado.");
+
+      QuerySnapshot snapshot = await _firestore
+          .collection("users")
+          .doc(user.uid)
+          .collection("properties")
+          .orderBy("createdAt", descending: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => {...doc.data() as Map<String, dynamic>, "id": doc.id})
+          .toList();
+    } catch (e) {
+      throw Exception("Erro ao obter propriedades: $e");
+    }
+  }
+
   Future<void> deleteProperty(String id) async {
     try {
       User? user = _auth.currentUser;
-      if (user == null) {
-        throw Exception("Usuário não autenticado.");
-      }
+      if (user == null) throw Exception("Usuário não autenticado.");
 
       await _firestore
           .collection("users")
@@ -150,9 +145,7 @@ class PropertyProvider with ChangeNotifier {
   Future<Map<String, dynamic>> getPropertyById(String id) async {
     try {
       User? user = _auth.currentUser;
-      if (user == null) {
-        throw Exception("Usuário não autenticado.");
-      }
+      if (user == null) throw Exception("Usuário não autenticado.");
 
       DocumentSnapshot snapshot = await _firestore
           .collection("users")
@@ -171,7 +164,6 @@ class PropertyProvider with ChangeNotifier {
     }
   }
 
-  /// ✅ NOVO: usado quando o imóvel pertence a outro usuário (ex: contratante)
   Future<Map<String, dynamic>> getPropertyByIdFromUser(
       String id, String userId) async {
     try {

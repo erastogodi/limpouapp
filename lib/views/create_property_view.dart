@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:limpou25k/providers/property_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:location/location.dart' as loc;
+
+import 'package:geocoding/geocoding.dart';
 
 class CreatePropertyView extends StatefulWidget {
   final String? propertyId; // Adiciona um campo opcional para edição
@@ -24,6 +27,8 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
   double _selectedSize = 50; // Tamanho inicial do imóvel
   bool isEditing = false;
   String? propertyId;
+  double? _latitude;
+  double? _longitude;
 
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _cityStateController = TextEditingController();
@@ -209,6 +214,26 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
                 textAlign: TextAlign.center,
               ),
               _buildTextField("Digite o CEP", _cepController),
+              // Botão: Obter Localização Atual
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: _preencherEnderecoComLocalizacaoAtual,
+                  icon: const Icon(Icons.my_location),
+                  label: Text(
+                    "Usar Localização Atual",
+                    style: GoogleFonts.poppins(fontSize: 14),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
 
               const SizedBox(height: 20),
 
@@ -521,6 +546,8 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
                   size: "${_selectedSize.toInt()}m²",
                   areasToClean: _selectedAreas,
                   materialsProvided: _materialsProvided,
+                  latitude: _latitude!,
+                  longitude: _longitude!,
                 );
               } else {
                 // 🔹 Cria um novo imóvel
@@ -537,6 +564,8 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
                   size: "${_selectedSize.toInt()}m²",
                   areasToClean: _selectedAreas,
                   materialsProvided: _materialsProvided,
+                  latitude: _latitude!,
+                  longitude: _longitude!,
                 );
               }
 
@@ -597,5 +626,49 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
         ),
       ),
     );
+  }
+
+  Future<void> _preencherEnderecoComLocalizacaoAtual() async {
+    try {
+      final location = loc.Location();
+
+      bool serviceEnabled = await location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await location.requestService();
+        if (!serviceEnabled) return;
+      }
+
+      loc.PermissionStatus permissionGranted = await location.hasPermission();
+      if (permissionGranted == loc.PermissionStatus.denied) {
+        permissionGranted = await location.requestPermission();
+        if (permissionGranted != loc.PermissionStatus.granted) return;
+      }
+
+      final currentLocation = await location.getLocation();
+      _latitude = currentLocation.latitude;
+      _longitude = currentLocation.longitude;
+
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(_latitude!, _longitude!);
+
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+        setState(() {
+          _addressController.text =
+              "${placemark.street ?? ''}, ${placemark.subThoroughfare ?? ''}";
+          _cityStateController.text =
+              "${placemark.locality ?? ''}, ${placemark.administrativeArea ?? ''}";
+          _cepController.text = placemark.postalCode ?? '';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Endereço preenchido com sucesso!")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro ao obter localização: $e")),
+      );
+    }
   }
 }
