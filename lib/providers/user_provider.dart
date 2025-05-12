@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
 import 'package:geocoding/geocoding.dart';
@@ -43,6 +45,34 @@ class UserProvider extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> uploadProfilePicture(File imageFile) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception("Usuário não autenticado");
+
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('users/${currentUser.uid}/profile.jpg');
+
+      // ⬆️ Upload da imagem
+      final uploadTask = await storageRef.putFile(imageFile);
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+      // 🔁 Atualiza no Firestore e no modelo local
+      await _firestore.collection('users').doc(currentUser.uid).update({
+        'profilePicture': downloadUrl,
+      });
+
+      if (user != null) {
+        user!.profilePicture = downloadUrl;
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Erro ao fazer upload da imagem de perfil: $e");
+      rethrow;
     }
   }
 
@@ -240,7 +270,5 @@ class UserProvider extends ChangeNotifier {
         });
       }
     }
-
-    print("✅ Diaristas simuladas com agendamentos e avaliações adicionadas!");
   }
 }

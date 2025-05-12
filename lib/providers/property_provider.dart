@@ -21,6 +21,7 @@ class PropertyProvider with ChangeNotifier {
     required bool materialsProvided,
     required double latitude,
     required double longitude,
+    required String imageUrl,
   }) async {
     try {
       User? user = _auth.currentUser;
@@ -28,7 +29,6 @@ class PropertyProvider with ChangeNotifier {
 
       DocumentReference userRef = _firestore.collection("users").doc(user.uid);
       CollectionReference propertiesRef = userRef.collection("properties");
-
       await propertiesRef.add({
         "userId": user.uid,
         "propertyType": propertyType,
@@ -46,6 +46,7 @@ class PropertyProvider with ChangeNotifier {
         "latitude": latitude,
         "longitude": longitude,
         "createdAt": FieldValue.serverTimestamp(),
+        "imageUrl": imageUrl, // <- mantido corretamente agora
       });
 
       notifyListeners();
@@ -70,6 +71,7 @@ class PropertyProvider with ChangeNotifier {
     required bool materialsProvided,
     required double latitude,
     required double longitude,
+    required String imageUrl,
   }) async {
     try {
       User? user = _auth.currentUser;
@@ -96,6 +98,7 @@ class PropertyProvider with ChangeNotifier {
         "latitude": latitude,
         "longitude": longitude,
         "updatedAt": FieldValue.serverTimestamp(),
+        "imageUrl": imageUrl,
       });
 
       notifyListeners();

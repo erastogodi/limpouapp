@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:location/location.dart' as loc;
 
 import 'package:geocoding/geocoding.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class CreatePropertyView extends StatefulWidget {
   final String? propertyId; // Adiciona um campo opcional para edição
@@ -26,6 +29,10 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
   bool _materialsProvided = false;
   double _selectedSize = 50; // Tamanho inicial do imóvel
   bool isEditing = false;
+  File? _propertyImage;
+  String? _propertyImageUrl;
+  bool _isUploadingImage = false;
+
   String? propertyId;
   double? _latitude;
   double? _longitude;
@@ -54,6 +61,36 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
     super.initState();
     if (widget.propertyId != null) {
       _loadPropertyData();
+    }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() => _isUploadingImage = true);
+
+      try {
+        final file = File(pickedFile.path);
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('properties/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+        await storageRef.putFile(file);
+        final downloadUrl = await storageRef.getDownloadURL();
+
+        setState(() {
+          _propertyImage = file;
+          _propertyImageUrl = downloadUrl;
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erro ao enviar imagem: $e")),
+        );
+      } finally {
+        setState(() => _isUploadingImage = false);
+      }
     }
   }
 
@@ -159,6 +196,61 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
               ], (val) {
                 setState(() => selectedSpaceType = val);
               }),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    "Foto da Propriedade (opcional)",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  _propertyImage != null
+                      ? Image.file(_propertyImage!,
+                          height: 150, fit: BoxFit.cover)
+                      : _propertyImageUrl != null
+                          ? Image.network(_propertyImageUrl!,
+                              height: 150, fit: BoxFit.cover)
+                          : Container(
+                              height: 150,
+                              width: double.infinity,
+                              color: Colors.grey[200],
+                              alignment: Alignment.center,
+                              child: const Text(
+                                "Nenhuma imagem selecionada",
+                                style: TextStyle(color: Colors.black54),
+                              ),
+                            ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: _pickAndUploadImage,
+                      icon: const Icon(Icons.photo),
+                      label: Text(
+                        "Adicionar Foto",
+                        style: GoogleFonts.poppins(fontSize: 14),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  if (_isUploadingImage)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: LinearProgressIndicator(),
+                    ),
+                  const SizedBox(height: 20),
+                ],
+              ),
 
               const SizedBox(height: 20),
 
@@ -546,8 +638,9 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
                   size: "${_selectedSize.toInt()}m²",
                   areasToClean: _selectedAreas,
                   materialsProvided: _materialsProvided,
-                  latitude: _latitude!,
-                  longitude: _longitude!,
+                  imageUrl: _propertyImageUrl ?? '',
+                  latitude: _latitude ?? 0.0,
+                  longitude: _longitude ?? 0.0,
                 );
               } else {
                 // 🔹 Cria um novo imóvel
@@ -564,9 +657,19 @@ class _CreatePropertyViewState extends State<CreatePropertyView> {
                   size: "${_selectedSize.toInt()}m²",
                   areasToClean: _selectedAreas,
                   materialsProvided: _materialsProvided,
-                  latitude: _latitude!,
-                  longitude: _longitude!,
+                  imageUrl: _propertyImageUrl ?? '',
+                  latitude: _latitude ?? 0.0,
+                  longitude: _longitude ?? 0.0,
                 );
+              }
+              if (_latitude == null || _longitude == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        "Por favor, use a localização atual ou preencha manualmente."),
+                  ),
+                );
+                return;
               }
 
               // ✅ Retornar "true" para que a tela anterior recarregue os imóveis

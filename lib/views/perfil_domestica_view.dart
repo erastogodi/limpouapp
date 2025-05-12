@@ -31,7 +31,7 @@ class _PerfilDomesticaViewState extends State<PerfilDomesticaView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Perfil da Doméstica"),
+        title: const Text("Perfil da Diarista"),
         backgroundColor: Colors.amber.shade700,
       ),
       body: Consumer<UserProvider>(

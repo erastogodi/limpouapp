@@ -65,68 +65,75 @@ class _HomeContratanteViewState extends State<HomeContratanteView> {
       ),
       body: userProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Container(
-                  color: const Color(0xFFFFF8E1),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Filtrar por distância",
-                          style: GoogleFonts.poppins(
-                              fontSize: 16, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 6),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: Colors.amber,
-                          thumbColor: Colors.amber,
-                          overlayColor: Colors.amber.withOpacity(0.2),
-                          inactiveTrackColor: Colors.amber.shade100,
-                        ),
-                        child: Slider(
-                          min: 1,
-                          max: 100,
-                          divisions: 99,
-                          value: _raioFiltro,
-                          label: "${_raioFiltro.toStringAsFixed(0)} km",
-                          onChanged: (value) {
-                            setState(() {
-                              _raioFiltro = value;
-                            });
-                          },
-                        ),
+          : ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: diaristasFiltradas.length + 1, // 1 para o filtro
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          "Raio atual: ${_raioFiltro.toStringAsFixed(0)} km",
-                          style: GoogleFonts.poppins(fontSize: 14),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Filtrar por distância",
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              trackHeight: 2,
+                              activeTrackColor: Colors.amber,
+                              inactiveTrackColor: Colors.amber.shade100,
+                              thumbColor: Colors.amber,
+                              overlayColor: Colors.amber.withOpacity(0.2),
+                            ),
+                            child: Slider(
+                              min: 1,
+                              max: 100,
+                              divisions: 99,
+                              value: _raioFiltro,
+                              label: "${_raioFiltro.toStringAsFixed(0)} km",
+                              onChanged: (value) {
+                                setState(() {
+                                  _raioFiltro = value;
+                                });
+                              },
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              "Raio atual: ${_raioFiltro.toStringAsFixed(0)} km",
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12, color: Colors.black54),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: diaristasFiltradas.isEmpty
-                      ? const Center(
-                          child: Text("Nenhuma diarista encontrada nesse raio.",
-                              style: TextStyle(fontSize: 18)))
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16.0),
-                          itemCount: diaristasFiltradas.length,
-                          itemBuilder: (context, index) {
-                            final diarista = diaristasFiltradas[index]
-                                ['diarista'] as UserModel;
-                            final distancia = diaristasFiltradas[index]
-                                ['distancia'] as double;
-                            return _buildUserCard(context, diarista, distancia);
-                          },
-                        ),
-                ),
-              ],
+                    ),
+                  );
+                }
+
+                final diarista =
+                    diaristasFiltradas[index - 1]['diarista'] as UserModel;
+                final distancia =
+                    diaristasFiltradas[index - 1]['distancia'] as double;
+
+                return _buildUserCard(context, diarista, distancia);
+              },
             ),
     );
   }
@@ -153,7 +160,13 @@ class _HomeContratanteViewState extends State<HomeContratanteView> {
                     CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.grey.shade300,
-                      backgroundImage: const AssetImage('assets/logo.jpeg'),
+                      backgroundImage: diarista.profilePicture.isNotEmpty
+                          ? NetworkImage(diarista.profilePicture)
+                          : null,
+                      child: diarista.profilePicture.isEmpty
+                          ? const Icon(Icons.person,
+                              size: 30, color: Colors.white)
+                          : null,
                     ),
                     const SizedBox(width: 16),
                     Expanded(

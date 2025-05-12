@@ -1,0 +1,2 @@
+C:/Users/erast/Documents/limpou/limpou25k/android/app/.cxx/Debug/6qg4w4u4/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/erast/Documents/limpou/limpou25k/android/app/.cxx/Debug/6qg4w4u4/armeabi-v7a/CMakeFiles/rebuild_cache.dir

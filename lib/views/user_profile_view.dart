@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:limpou25k/providers/user_provider.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class UserProfileView extends StatefulWidget {
   final bool isDomestic;
@@ -18,6 +20,7 @@ class UserProfileView extends StatefulWidget {
 }
 
 class _UserProfileViewState extends State<UserProfileView> {
+  bool _isPicking = false;
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -241,7 +244,7 @@ class _UserProfileViewState extends State<UserProfileView> {
             child: const Text(
               "Atualizar Localização",
               style: TextStyle(
-                  color: Color.fromARGB(255, 34, 32, 32), fontSize: 16),
+                  color: Color.fromARGB(255, 255, 255, 255), fontSize: 16),
             ),
           ),
         ),
@@ -250,12 +253,41 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   Widget _buildProfileHeader() {
+    final userProvider = Provider.of<UserProvider>(context);
+    final profileUrl = userProvider.user?.profilePicture;
+
     return Column(
       children: [
-        const CircleAvatar(
-          radius: 50,
-          backgroundColor: Colors.grey,
-          child: Icon(Icons.person, size: 50, color: Colors.white),
+        GestureDetector(
+          onTap: () async {
+            if (_isPicking) return;
+            _isPicking = true;
+
+            try {
+              final picker = ImagePicker();
+              final picked =
+                  await picker.pickImage(source: ImageSource.gallery);
+
+              if (picked != null) {
+                await userProvider.uploadProfilePicture(File(picked.path));
+                if (mounted) setState(() {}); // Atualiza avatar na tela
+              }
+            } catch (e) {
+              print("Erro ao selecionar imagem: $e");
+            } finally {
+              _isPicking = false;
+            }
+          },
+          child: CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.grey.shade300,
+            backgroundImage: (profileUrl != null && profileUrl.isNotEmpty)
+                ? NetworkImage(profileUrl)
+                : null,
+            child: (profileUrl == null || profileUrl.isEmpty)
+                ? const Icon(Icons.person, size: 50, color: Colors.white)
+                : null,
+          ),
         ),
         const SizedBox(height: 10),
         Text(_nameController.text,

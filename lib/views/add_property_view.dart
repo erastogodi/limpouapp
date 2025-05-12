@@ -152,12 +152,20 @@ class _AddPropertyViewState extends State<AddPropertyView> {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: Image.asset(
-              'assets/images/casa.jpg',
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            child: (property['imageUrl'] != null &&
+                    property['imageUrl'].toString().isNotEmpty)
+                ? Image.network(
+                    property['imageUrl'],
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    'assets/images/casa.jpg',
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
           ),
           Padding(
             padding: const EdgeInsets.all(12.0),
